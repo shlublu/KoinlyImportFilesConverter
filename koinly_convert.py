@@ -8,7 +8,7 @@ Usage: koinly_convert.py binance_card|meria|ftx_deposits|ftx_conversions|ftx_tra
 Disclaimer: I built this tool for my own use, and I apologize as it looks a bit quick'n'dirty. 
             I am sharing it because if it was useful to me, it might be useful to others. However, it comes with no guarantee of any kind.
 
-Default fiat currency notice: the default fiat currency is EUR by default. Please adjust the variable 'FIAT_BASE_CURRENCY' below to use it with another base currency. 
+Default fiat currency notice: the default fiat currency is EUR. Please adjust the variable 'FIAT_BASE_CURRENCY' below to use it with another base currency. 
                               This is very important for Binance Card export files as this corresponds to the card's currency. This is expected to be minor for export files from other CEXs.
 
 Binance card notice: Binance Card history files are provided as Excel files by Binance. They should be converted to CSV files using the Excel's 'Save As' function prior using this tool. 

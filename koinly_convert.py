@@ -22,7 +22,6 @@ Licence: EUPL 1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/at
 Author: Vincent Poulain, December 2022
 '''
 
-
 FIAT_BASE_CURRENCY = 'EUR'
 
 CSV_DELIMITER_OUT = ';'

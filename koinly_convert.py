@@ -386,7 +386,7 @@ def convertMeria(inputFile):
         description = None
 
         if txType == 'credit':
-            if txInfo in ('airdrop', 'deposit', 'order', 'reward', 'unstaking'):
+            if txInfo in ('airdrop', 'deposit', 'order', 'reward', 'unstaking', 'resale'):
                 receivedAmount = destinationAmount
                 receivedCurrency = destinationCurrency
 
@@ -396,7 +396,7 @@ def convertMeria(inputFile):
 
                 label = (
                     txInfo if txInfo in ('airdrop', 'reward') else 
-                        'unstake' if txInfo == 'unstaking' else 
+                        'unstake' if txInfo in ('unstaking', 'resale') else 
                             'liquidity in' if receivedCurrency == FIAT_BASE_CURRENCY else 
                                 None
                 )

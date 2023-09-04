@@ -401,6 +401,9 @@ def convertMeria(inputFile):
                                 None
                 )
 
+            elif txInfo in ('claim'):
+                pass
+
             else:
                 unhandledTxInfoForTxTypeError(txType, txInfo)
 

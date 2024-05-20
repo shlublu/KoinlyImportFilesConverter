@@ -190,6 +190,9 @@ def convertMeria(inputFile):
                 unhandledTxInfoForTxTypeError(txType, txInfo)
 
         elif txType == 'exchange':
+            if sourceCurrency == destinationCurrency:
+                continue
+            
             if txInfo == '':
                 sentAmount = sourceAmount
                 sentCurrency = sourceCurrency

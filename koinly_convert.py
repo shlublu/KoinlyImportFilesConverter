@@ -1,4 +1,4 @@
-#!/bin/python
+#!/bin/python3
 
 '''
 Koinly Converter: converts history files from various CEX (currently just Meria 'Waltio' exports as formerly handled others have ceased operations) to Koinly import files.

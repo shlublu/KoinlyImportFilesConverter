@@ -1,7 +1,7 @@
 #!/bin/python3
 
 '''
-Koinly Converter: converts history files from various CEX (currently just Meria 'Waltio' exports as formerly handled others have ceased operations) to Koinly import files.
+Koinly Converter: converts history files from various CEX (Meria, Etherlink) to Koinly import files.
 
 Usage: koinly_convert.py meria path/to/file.csv
 
@@ -15,6 +15,13 @@ Licence: EUPL 1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/at
 Author: Vincent Poulain, December 2022
 '''
 
+from __future__ import annotations
+
+import csv
+import os
+import sys
+
+
 FIAT_BASE_CURRENCY = 'EUR'
 
 CSV_DELIMITER_OUT = ';'
@@ -24,8 +31,12 @@ CSV_DELIMITER_IN_BINANCECARD = ';'
 class OutputLine:
     def __init__(
         self, 
-        txDate, sentAmount, sentCurrency, receivedAmount, receivedCurrency, *, 
-        feeAmount = None, feeCurrency = None, netWorthAmount = None, netWorthCurrency = None, label = None, description = None, txHash = None
+        txDate: str, 
+        sentAmount: str, sentCurrency: str, 
+        receivedAmount: str, receivedCurrency: str, *, 
+        feeAmount: str = None, feeCurrency: str = None, 
+        netWorthAmount: str = None, netWorthCurrency: str = None, 
+        label: str = None, description: str = None, txHash: str = None
         ) -> None:
         self.txDate = txDate
         self.sentAmount = sentAmount
@@ -41,7 +52,7 @@ class OutputLine:
         self.txHash = txHash
 
 
-    def toList(self):
+    def toList(self) -> list[str]:
         return [
             self.txDate, 
             self.sentAmount, self.sentCurrency, 
@@ -55,7 +66,7 @@ class OutputLine:
 
 
     @staticmethod
-    def headers():
+    def headers() -> OutputLine:
         return OutputLine(
             txDate = 'Date', 
             sentAmount = 'Sent Amount', sentCurrency = 'Sent Currency', 
@@ -68,16 +79,13 @@ class OutputLine:
         )
 
 
-def doConvert():
-    import csv
-    import os
-    import sys
-
+def doConvert() -> None:
     MODE_MERIA = 'meria'
+    MODE_ETHERLINK = 'etherlink'
 
     if len(sys.argv) != 3:
         print(
-            f'Usage: {sys.argv[0]} {MODE_MERIA} path/to/file.csv', 
+            f'Usage: {sys.argv[0]} {MODE_MERIA}|{MODE_ETHERLINK} path/to/file.csv', 
             file = sys.stderr
         )
 
@@ -91,6 +99,8 @@ def doConvert():
 
                 if mode == MODE_MERIA:
                     lines = convertMeria(inputFile)
+                elif mode == MODE_ETHERLINK:
+                    lines = convertEtherlink(inputFile)
                 else:
                     print(f'Unknown mode: {mode}. Try "{sys.argv[0]} help" for help.', file = sys.stderr)
 
@@ -106,19 +116,15 @@ def doConvert():
                 writer.writerow(row.toList())
 
 
-def csvReader(inputFile, delimiter):
-    import csv
-
+def csvReader(inputFile: str, delimiter: str):
     reader = csv.reader(inputFile, delimiter = delimiter)
     next(reader)
 
     return reader
 
 
-def convertMeria(inputFile):
-    import sys
-
-    def unhandledTxInfoForTxTypeError(txType, txInfo):
+def convertMeria(inputFile: str):
+    def unhandledTxInfoForTxTypeError(txType: str, txInfo: str):
         print(f'Unhandled txInfo for txType {txType}: {txInfo}.', file = sys.stderr)
 
     normalizeLunaTicker = lambda ticker : ticker if ticker != 'LUNA' else f'{ticker}2'
@@ -233,6 +239,65 @@ def convertMeria(inputFile):
                 sentAmount = sentAmount, sentCurrency = normalizeLunaTicker(sentCurrency),
                 receivedAmount = receivedAmount, receivedCurrency = normalizeLunaTicker(receivedCurrency),
                 feeAmount = feeAmount, feeCurrency = normalizeLunaTicker(feeCurrency),
+                label = label,
+                description = description,
+                txHash = txHash
+            )
+        )
+
+    return lines
+
+
+def convertEtherlink(inputFile: str):
+    reader = csvReader(inputFile, ',')
+    lines = []
+
+    def toXtz(amount: str) -> str:
+        return str(int(amount) / 1000000000000000000)
+
+    for row in reader:
+        txHash = row[0]
+        txDate = row[2]
+        fromAddress = row[3]
+        toAddress = row[4]        
+        txType = row[6]
+        amount = row[7]
+        fees = row[8]
+        methodName = row[14]
+        currency = 'XTZ'
+
+        sentAmount = None
+        sentCurrency = None
+        receivedAmount = None
+        receivedCurrency = None
+        feeAmount = None
+        feeCurrency = None
+        label = None
+        description = None        
+
+        if txType == 'IN':
+            receivedAmount = toXtz(amount)
+            receivedCurrency = currency
+            label = methodName if methodName == 'deposit' else None
+
+        elif txType == 'OUT':
+            sentAmount = toXtz(amount)
+            sentCurrency = currency
+            feeAmount = toXtz(fees)
+            feeCurrency = currency           
+            label = None
+
+        else:
+            print(f'Unhandled txType: {txType}.', file = sys.stderr)
+
+        description = f'{txType}{(" (" + methodName + ")") if len(methodName) > 0 else ""}: {fromAddress} to {toAddress}' 
+
+        lines.append(
+            OutputLine(
+                txDate = txDate,
+                sentAmount = sentAmount, sentCurrency = sentCurrency,
+                receivedAmount = receivedAmount, receivedCurrency = receivedCurrency,
+                feeAmount = feeAmount, feeCurrency = feeCurrency,
                 label = label,
                 description = description,
                 txHash = txHash

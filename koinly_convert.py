@@ -116,14 +116,14 @@ def doConvert() -> None:
                 writer.writerow(row.toList())
 
 
-def csvReader(inputFile: str, delimiter: str):
+def csvReader(inputFile: str, delimiter: str) -> csv.reader:
     reader = csv.reader(inputFile, delimiter = delimiter)
     next(reader)
 
     return reader
 
 
-def convertMeria(inputFile: str):
+def convertMeria(inputFile: str) -> list[OutputLine]:
     def unhandledTxInfoForTxTypeError(txType: str, txInfo: str):
         print(f'Unhandled txInfo for txType {txType}: {txInfo}.', file = sys.stderr)
 
@@ -248,7 +248,7 @@ def convertMeria(inputFile: str):
     return lines
 
 
-def convertEtherlink(inputFile: str):
+def convertEtherlink(inputFile: str) -> list[OutputLine]:
     reader = csvReader(inputFile, ',')
     lines = []
 

@@ -271,17 +271,18 @@ def convertMeria(inputFile: TextIO) -> list[OutputLine]:
         else:
             logger.error(f'Unhandled txType: {txType}.')
 
-        lines.append(
-            OutputLine(
-                txDate = txDate,
-                sentAmount = sentAmount, sentCurrency = normalizeLunaTicker(sentCurrency),
-                receivedAmount = receivedAmount, receivedCurrency = normalizeLunaTicker(receivedCurrency),
-                feeAmount = feeAmount, feeCurrency = normalizeLunaTicker(feeCurrency),
-                label = label,
-                description = description,
-                txHash = txHash
+        if label is not None:
+            lines.append(
+                OutputLine(
+                    txDate = txDate,
+                    sentAmount = sentAmount, sentCurrency = normalizeLunaTicker(sentCurrency),
+                    receivedAmount = receivedAmount, receivedCurrency = normalizeLunaTicker(receivedCurrency),
+                    feeAmount = feeAmount, feeCurrency = normalizeLunaTicker(feeCurrency),
+                    label = label,
+                    description = description,
+                    txHash = txHash
+                )
             )
-        )
 
     return lines
 

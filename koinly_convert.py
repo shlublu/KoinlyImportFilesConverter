@@ -157,7 +157,7 @@ def toUnits(amount: str, decimals: str) -> str:
     return strResult
 
 
-def receivedFairAmpunt(receivedAmount: str, sentAmount: str):
+def receivedFairAmount(receivedAmount: str, sentAmount: str):
     return float(receivedAmount) >= float(sentAmount)
     
 
@@ -437,7 +437,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBack.txDate != tx.txDate or 
                 txBack.sentAmount is not None or 
                 txBack.sentCurrency is not None or 
-                not receivedFairAmpunt(txBack.receivedAmount, tx.sentAmount) or 
+                not receivedFairAmount(txBack.receivedAmount, tx.sentAmount) or 
                 txBack.receivedCurrency != f'slW{tx.sentCurrency}' or
                 txBack.txHash != tx.txHash
             ):
@@ -465,7 +465,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBackA.txDate != tx.txDate or txBackB.txDate != tx.txDate or
                 txBackA.sentAmount is None or 
                 txBackA.sentCurrency is None or 
-                not receivedFairAmpunt(txBackB.receivedAmount, txBackA.sentAmount) or 
+                not receivedFairAmount(txBackB.receivedAmount, txBackA.sentAmount) or 
                 txBackB.receivedCurrency != f'sl{txBackA.sentCurrency}' or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
@@ -523,7 +523,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBackA.txDate != tx.txDate or txBackB.txDate != tx.txDate or
                 txBackA.sentAmount is None or 
                 txBackA.sentCurrency != f'sl{txBackB.receivedCurrency}' or 
-                not receivedFairAmpunt(txBackB.receivedAmount, txBackA.sentAmount) or 
+                not receivedFairAmount(txBackB.receivedAmount, txBackA.sentAmount) or 
                 txBackB.receivedCurrency is None or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
@@ -609,6 +609,35 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
 
                 skipNext = 1
 
+        elif tx.description.startswith('OUT (exactInputSingle):'):
+            txBackA = getTxByIndex(txList, idx + 1)
+            txBackB = getTxByIndex(txList, idx + 2)
+
+            if (
+                txBackA.txDate != tx.txDate or txBackB.txDate != tx.txDate or
+                txBackA.receivedAmount is None or 
+                txBackA.receivedCurrency != 'xU3O8' or 
+                txBackB.sentCurrency is None or
+                txBackB.sentAmount is None or
+                txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
+            ):
+                logger.error(f'No consistent back transactions for OUT exactInputSingle: {tx.txDate}')
+                consolidatedTxs.append(tx)
+
+            else:
+                tx.description = f'Bought {txBackA.receivedCurrency}'
+                consolidatedTxs.append(OutputLine(
+                        txDate = tx.txDate, 
+                        sentAmount = txBackB.sentAmount, sentCurrency = txBackB.sentCurrency, 
+                        receivedAmount = txBackA.receivedAmount, receivedCurrency = txBackA.receivedCurrency,
+                        feeAmount = tx.feeAmount, feeCurrency = tx.feeCurrency, 
+                        label = 'swap', description = f'Bought {txBackA.receivedAmount} {txBackA.receivedCurrency}',
+                        txHash = tx.txHash
+                    )
+                )
+
+                skipNext = 2
+                
         else:
             consolidatedTxs.append(tx)
 

@@ -9,7 +9,7 @@ Disclaimer: I built this tool for my own use, and I apologize as it looks a bit 
             I am sharing it because if it was useful to me, it might be useful to others. However, it comes with no guarantee of any kind.
 
 Licence: EUPL 1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
-Author: Vincent Poulain, 2024
+Author: Vincent Poulain, 2022-2025
 '''
 
 import csv

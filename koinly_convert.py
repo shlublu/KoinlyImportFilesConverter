@@ -1,7 +1,7 @@
 #!/bin/python3
 
 '''
-Koinly Convert: converts history files from various CEX (to date: Meria, Etherlink) to Koinly import files.
+Koinly Convert: converts history files from various CEX and block explorers (to date: Meria, Etherlink) to Koinly import files.
 
 Usage: koinly_convert.py meria|etherlink_xtz|etherlink_tokens path/to/file.csv
 
@@ -9,10 +9,9 @@ Disclaimer: I built this tool for my own use, and I apologize as it looks a bit 
             I am sharing it because if it was useful to me, it might be useful to others. However, it comes with no guarantee of any kind.
 
 Default fiat currency notice: the default fiat currency is EUR. Please adjust the variable 'FIAT_BASE_CURRENCY' below to use it with another base currency. 
-                              This is very important for Binance Card export files as this corresponds to the card's currency. This is expected to be minor for export files from other CEXs.
 
 Licence: EUPL 1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
-Author: Vincent Poulain, 2022-2024
+Author: Vincent Poulain, 2022-2025
 '''
 
 from __future__ import annotations

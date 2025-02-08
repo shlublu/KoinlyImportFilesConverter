@@ -1,5 +1,5 @@
 # KoinlyImportFilesConverter
-- Converts history files from various CEX to Koinly import files.
+- Converts history files from various CEX and block explorers to Koinly import files.
 - Displays the balance changes engendered by these generated Koinly import files.
 
 ## Usage
@@ -21,4 +21,4 @@ The default fiat currency is EUR. Please adjust the variable 'FIAT_BASE_CURRENCY
 EUPL 1.2 https://joinup.ec.europa.eu/sites/default/files/custom-page/attachment/2020-03/EUPL-1.2%20EN.txt
 
 ## Author
-Vincent Poulain, 2022-2024
+Vincent Poulain, 2022-2025

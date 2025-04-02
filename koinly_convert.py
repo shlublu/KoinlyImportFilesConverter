@@ -202,10 +202,9 @@ def convertMeria(inputFile: TextIO) -> list[OutputLine]:
                     feeCurrency = receivedCurrency
 
                 label = (
-                    txInfo if txInfo in ('airdrop', 'reward') else 
-                        'unstake' if txInfo in ('unstaking', 'resale') else 
-                            'liquidity in' if receivedCurrency == FIAT_BASE_CURRENCY else 
-                                None
+                    'unstake' if txInfo in ('unstaking', 'resale') else 
+                        'liquidity in' if receivedCurrency == FIAT_BASE_CURRENCY else 
+                            txInfo
                 )
 
             elif txInfo in ('claim'):

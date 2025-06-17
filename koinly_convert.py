@@ -54,7 +54,7 @@ class OutputLine:
         self.feeAmount = feeAmount
         self.feeCurrency = feeCurrency
         self.netWorthAmount = netWorthAmount
-        self.networthCurrency = netWorthCurrency
+        self.netWorthCurrency = netWorthCurrency
         self.label = label
         self.description = description
         self.txHash = txHash
@@ -66,7 +66,7 @@ class OutputLine:
             self.sentAmount, self.sentCurrency, 
             self.receivedAmount, self.receivedCurrency,
             self.feeAmount, self.feeCurrency,
-            self.netWorthAmount, self.networthCurrency,
+            self.netWorthAmount, self.netWorthCurrency,
             self.label,
             self.description,
             self.txHash
@@ -75,6 +75,19 @@ class OutputLine:
 
     def __repr__(self) -> str:
         return repr(self.toList())
+    
+    
+    def __str__(self) -> str:
+        return f"""{{
+    txDate: {self.txDate},
+    sentAmount: {self.sentAmount}, sentCurrency: {self.sentCurrency},
+    receivedAmount: {self.receivedAmount}, receivedCurrency: {self.receivedCurrency},
+    feeAmount: {self.feeAmount}, feeCurrency: {self.feeCurrency},
+    netWorthAmount: {self.netWorthAmount}, netWorthCurrency: {self.netWorthCurrency},
+    label: {self.label},
+    description: {self.description},
+    txHash: {self.txHash}
+}}"""
     
 
     @staticmethod
@@ -246,7 +259,7 @@ def convertMeria(inputFile: TextIO) -> list[OutputLine]:
                     feeAmount = str(feeMultiplier * float(sentAmount))
                     feeCurrency = sentCurrency
 
-                label = 'swap'
+                label = ''
 
             else:
                 unhandledTxInfoForTxTypeError(txType, txInfo)
@@ -261,7 +274,7 @@ def convertMeria(inputFile: TextIO) -> list[OutputLine]:
                     feeCurrency = sentCurrency
 
                 description = f'{destinationType} {address} {memo}'
-                label = None
+                label = ''
 
             else:
                 unhandledTxInfoForTxTypeError(txType, txInfo)
@@ -300,8 +313,13 @@ def convertEtherlinkXtz(inputFile: TextIO) -> list[OutputLine]:
         txType = row[6]
         amount = row[7]
         fees = row[8]
+        status = row[9]
         methodName = row[14]
         currency = 'XTZ'
+
+        if status != 'ok':
+            logger.warning(f'Ignored transaction with status "{status}": {row}')
+            continue
 
         sentAmount = None
         sentCurrency = None
@@ -358,6 +376,11 @@ def convertEtherlinkTokens(inputFile: TextIO) -> list[OutputLine]:
         tokenDecimals = row[7]
         tokenSymbol = row[8]
         amount = row[9]
+        status = row[11]
+
+        if status != 'ok':
+            logger.warning(f'Ignored transfer with status "{status}": {row}')
+            continue
 
         sentAmount = None
         sentCurrency = None
@@ -374,7 +397,6 @@ def convertEtherlinkTokens(inputFile: TextIO) -> list[OutputLine]:
         if txType == 'IN':
             receivedAmount = toUnits(amount, tokenDecimals)
             receivedCurrency = tokenSymbol
-            label = None
 
         elif txType == 'OUT':
             sentAmount = toUnits(amount, tokenDecimals)
@@ -383,11 +405,7 @@ def convertEtherlinkTokens(inputFile: TextIO) -> list[OutputLine]:
             if sentCurrency[:3]  == 'slW' and  toAddress == '0x65fe928c5D04a2DA42347bA9D4d1C3f4952851F5' and contractAddress == '0x008ae222661B6A42e3A097bd7AAC15412829106b':
                 receivedAmount = sentAmount
                 receivedCurrency = sentCurrency[3:]
-                label = 'swap'
                 description = f'Unwrapped {sentAmount} {sentCurrency} to {receivedAmount} {receivedCurrency}'
-
-            else:           
-                label = None
 
         else:
             logger.error(f'Unhandled txType: {txType}.')
@@ -439,7 +457,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBack.receivedCurrency != f'slW{tx.sentCurrency}' or
                 txBack.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transaction for OUT depositETH: {tx.txDate}')
+                logger.error(f'No consistent back transaction for OUT depositETH: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -448,7 +466,8 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = tx.sentAmount, sentCurrency = tx.sentCurrency, 
                         receivedAmount = txBack.receivedAmount, receivedCurrency = txBack.receivedCurrency,
                         feeAmount = tx.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = 'swap', description = f'Deposited {tx.sentAmount} {tx.sentCurrency}',
+                        netWorthAmount = txBack.receivedAmount, netWorthCurrency = tx.sentCurrency,
+                        label = '', description = f'Deposited {tx.sentAmount} {tx.sentCurrency}',
                         txHash = tx.txHash
                     )
                 )
@@ -467,7 +486,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBackB.receivedCurrency != f'sl{txBackA.sentCurrency}' or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transactions for supply: {tx.txDate}')
+                logger.error(f'No consistent back transactions for supply: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -479,7 +498,8 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = txBackA.sentAmount, sentCurrency = txBackA.sentCurrency, 
                         receivedAmount = txBackB.receivedAmount, receivedCurrency = txBackB.receivedCurrency,
                         feeAmount = txBackA.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = 'swap', description = f'Supplied {txBackA.sentAmount} {txBackA.sentCurrency}',
+                        netWorthAmount = txBack.receivedAmount, netWorthCurrency = tx.sentCurrency,
+                        label = '', description = f'Supplied {txBackA.sentAmount} {txBackA.sentCurrency}',
                         txHash = tx.txHash
                     )
                 )
@@ -497,7 +517,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBack.receivedCurrency != f'slW{tx.sentCurrency}' or
                 txBack.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transaction for OUT withdrawETH: {tx.txDate}')
+                logger.error(f'No consistent back transaction for OUT withdrawETH: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -525,7 +545,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBackB.receivedCurrency is None or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transactions for withdraw: {tx.txDate}')
+                logger.error(f'No consistent back transactions for withdraw: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -537,7 +557,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = txBackA.sentAmount, sentCurrency = txBackA.sentCurrency, 
                         receivedAmount = txBackB.receivedAmount, receivedCurrency = txBackB.receivedCurrency,
                         feeAmount = txBackA.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = 'swap', description = f'Redeemed {txBackA.sentAmount} {txBackA.sentCurrency}',
+                        label = '', description = f'Redeemed {txBackA.sentAmount} {txBackA.sentCurrency}',
                         txHash = tx.txHash
                     )
                 )
@@ -555,7 +575,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBack.receivedCurrency == tx.receivedCurrency or
                 txBack.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transaction for OUT multicall: {tx.txDate}')
+                logger.error(f'No consistent back transaction for OUT multicall: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -564,7 +584,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = tx.sentAmount, sentCurrency = tx.sentCurrency, 
                         receivedAmount = txBack.receivedAmount, receivedCurrency = txBack.receivedCurrency,
                         feeAmount = tx.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = 'swap', description = f'Swapped {tx.sentAmount} {tx.sentCurrency} to {txBack.receivedAmount} {txBack.receivedCurrency}',
+                        label = '', description = f'Swapped {tx.sentAmount} {tx.sentCurrency} to {txBack.receivedAmount} {txBack.receivedCurrency}',
                         txHash = tx.txHash
                     )
                 )
@@ -582,7 +602,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBack.sentCurrency is None or
                 txBack.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transaction for OUT bridge: {tx.txDate}')
+                logger.error(f'No consistent back transaction for OUT bridge: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -619,7 +639,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 txBackB.sentAmount is None or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
-                logger.error(f'No consistent back transactions for OUT exactInputSingle: {tx.txDate}')
+                logger.error(f'No consistent back transactions for OUT exactInputSingle: {tx}')
                 consolidatedTxs.append(tx)
 
             else:
@@ -629,7 +649,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = txBackB.sentAmount, sentCurrency = txBackB.sentCurrency, 
                         receivedAmount = txBackA.receivedAmount, receivedCurrency = txBackA.receivedCurrency,
                         feeAmount = tx.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = 'swap', description = f'Bought {txBackA.receivedAmount} {txBackA.receivedCurrency}',
+                        label = '', description = f'Bought {txBackA.receivedAmount} {txBackA.receivedCurrency}',
                         txHash = tx.txHash
                     )
                 )

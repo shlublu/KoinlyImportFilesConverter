@@ -539,9 +539,8 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
 
             if (
                 txBackA.txDate != tx.txDate or txBackB.txDate != tx.txDate or
-                txBackA.sentAmount is None or 
-                txBackA.sentCurrency != f'sl{txBackB.receivedCurrency}' or 
-                not receivedFairAmount(txBackB.receivedAmount, txBackA.sentAmount) or 
+                (txBackA.sentAmount is not None and (txBackA.sentCurrency != f'sl{txBackB.receivedCurrency}' or not receivedFairAmount(txBackB.receivedAmount, txBackA.sentAmount))) or
+                (txBackA.sentAmount is None and (txBackA.receivedCurrency != f'sl{txBackB.receivedCurrency}')) or
                 txBackB.receivedCurrency is None or
                 txBackA.txHash != tx.txHash or txBackB.txHash != tx.txHash
             ):
@@ -549,15 +548,23 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                 consolidatedTxs.append(tx)
 
             else:
-                tx.description = f'Unlocked {txBackA.sentCurrency} for OUT withdraw'
-                consolidatedTxs.append(tx)
+                if txBackA.sentAmount is None:
+                    tx.description = f'Received {txBackA.receivedCurrency} interests during OUT withdrawal'
+                    tx.sentAmount = 0
+                    tx.receivedAmount = txBackA.receivedAmount
+                    tx.receivedCurrency = txBackA.receivedCurrency    
+
+                else:
+                    tx.description = f'Unlocked {txBackA.sentCurrency} for OUT withdrawal'
+
+                consolidatedTxs.append(tx)         
 
                 consolidatedTxs.append(OutputLine(
                         txDate = tx.txDate, 
                         sentAmount = txBackA.sentAmount, sentCurrency = txBackA.sentCurrency, 
                         receivedAmount = txBackB.receivedAmount, receivedCurrency = txBackB.receivedCurrency,
                         feeAmount = txBackA.feeAmount, feeCurrency = tx.feeCurrency, 
-                        label = '', description = f'Redeemed {txBackA.sentAmount} {txBackA.sentCurrency}',
+                        label = '', description = f'Redeemed {txBackB.receivedAmount} {txBackB.receivedCurrency}',
                         txHash = tx.txHash
                     )
                 )

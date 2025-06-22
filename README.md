@@ -12,7 +12,7 @@
 
 ## Disclaimer
 I built this tool for my own use, and I apologize as it looks a bit quick'n'dirty. 
-I am sharing it because if it was useful to me, it might be useful to others. However, it comes with no guarantee of any kind.
+I am sharing it because if it is useful to me, it might be useful to others. However, it comes with no guarantee of any kind.
 
 ## Default fiat currency notice
 The default fiat currency is EUR. Please adjust the variable 'FIAT_BASE_CURRENCY' to use it with another base currency. 

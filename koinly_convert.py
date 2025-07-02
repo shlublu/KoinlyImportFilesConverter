@@ -498,7 +498,7 @@ def consolidateEtherlink(txList: list[OutputLine]) -> list[OutputLine]:
                         sentAmount = txBackA.sentAmount, sentCurrency = txBackA.sentCurrency, 
                         receivedAmount = txBackB.receivedAmount, receivedCurrency = txBackB.receivedCurrency,
                         feeAmount = txBackA.feeAmount, feeCurrency = tx.feeCurrency, 
-                        netWorthAmount = txBack.receivedAmount, netWorthCurrency = tx.sentCurrency,
+                        netWorthAmount = txBackA.receivedAmount, netWorthCurrency = tx.sentCurrency,
                         label = '', description = f'Supplied {txBackA.sentAmount} {txBackA.sentCurrency}',
                         txHash = tx.txHash
                     )
